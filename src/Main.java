@@ -5,25 +5,30 @@ import java.util.Scanner;
 
 public class Main {
     public static void main(String[] args) {
-        System.out.println("LogsAnalizer v 1.0\n");
+        System.out.println("LogsAnalizer v 1.1\n");
 
-        System.out.print("Podaj ścieżkę do katalogu\n> ");
-        Scanner scanner = new Scanner(System.in);
-        Directory directory = new Directory(scanner.next());
-        ArrayList<LogFile> filesList = directory.filesToList();
+        Directory directory = new Directory();
 
         while (true) {
-            search(filesList);
+            System.out.print("> ");
+            Scanner scanner = new Scanner(System.in);
+            LogFile.setSearchValue(scanner.next());
+
+            switch (LogFile.getSearchValue()) {
+                case "exit":
+                    System.exit(0);
+                    break;
+                case "cd":
+                    directory = new Directory();
+                    break;
+                default:
+                    search(directory.getFilesList());
+                    break;
+            }
         }
     }
 
     public static void search(ArrayList<LogFile> filesList) {
-        System.out.print("Podaj wyszukiwaną frazę:\n> ");
-        Scanner scanner = new Scanner(System.in);
-        LogFile.setSearchValue(scanner.next());
-
-        if (LogFile.getSearchValue().equals("exit")) System.exit(0);
-
         StringBuilder fileContent = new StringBuilder();
 
         for (LogFile file : filesList) {
