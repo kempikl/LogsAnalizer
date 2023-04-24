@@ -1,67 +1,49 @@
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.util.ArrayList;
+import com.jcraft.jsch.JSchException;
+
 import java.util.Scanner;
 
 public class Main {
-    public static void main(String[] args) {
+    public static void main(String[] args) throws JSchException {
         System.out.println("LogsAnalizer v 1.1\n");
 
-        Directory directory = new Directory();
+        Directory directory = setDirectoryType();
 
         while (true) {
             System.out.print("> ");
             Scanner scanner = new Scanner(System.in);
-            LogFile.setSearchValue(scanner.next());
+            LocalLogFile.setSearchValue(scanner.next());
 
-            switch (LogFile.getSearchValue()) {
+            switch (LocalLogFile.getSearchValue()) {
                 case "exit":
                     System.exit(0);
                     break;
                 case "cd":
-                    directory = new Directory();
+                    //directory = new LocalDirectory();
                     break;
                 default:
-                    search(directory.getFilesList());
+                    directory.search();
                     break;
             }
         }
     }
 
-    public static void search(ArrayList<LogFile> filesList) {
-        StringBuilder fileContent = new StringBuilder();
-
-        for (LogFile file : filesList) {
-            String tempStr = file.searchInFile();
-            if (tempStr != null) {
-                System.out.println(tempStr);
-                fileContent.append(tempStr).append("\n");
-            }
-        }
-
-        if (fileContent.length() != 0) {
-            writeToFile(fileContent);
-        } else System.out.println("Nic nie znaleziono\n");
-    }
-
-    public static void writeToFile(StringBuilder fileContent) {
+    private static Directory setDirectoryType() throws JSchException {
+        System.out.print("Wybierz typ katalogu [1 - lokalny, 2 - zdalny (SFTP)\n> ");
         Scanner scanner = new Scanner(System.in);
-
-        System.out.print("Zapisać do pliku? [t/n] > ");
-        if (scanner.next().contains("t")) {
-            System.out.print("Podaj nazwę pliku > ");
-            String fileName = scanner.next() + ".txt";
-            try {
-                FileOutputStream outputStream = new FileOutputStream(fileName);
-                byte[] strToBytes = fileContent.toString().getBytes();
-                outputStream.write(strToBytes);
-                outputStream.close();
-
-                System.out.println();
-                System.out.println("Plik zostal poprawnie zapisany");
-            } catch (IOException e) {
-                System.out.println("Blad zapisu pliku (" + e.getMessage() + ")");
-            }
+        int choice = scanner.nextInt();
+        if (choice == 1) return new LocalDirectory();
+        else if (choice == 2) {
+            System.out.print("Podaj nazwę hosta\n> ");
+            String hostName = scanner.next();
+            System.out.print("Podaj nazwę użytkownika\n> ");
+            String userName = scanner.next();
+            SftpClient sftpClient = new SftpClient(hostName, userName);
+            System.out.print("Podaj hasło\n> ");
+            String password = scanner.next();
+            sftpClient.authPassword(password);
+            RemoteDirectory.setSftpClient(sftpClient);
+            return new RemoteDirectory();
         }
+        return setDirectoryType();
     }
 }

@@ -1,59 +1,63 @@
-import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Scanner;
 
-public class Directory {
-    private final String directoryPath;
-    private ArrayList<LogFile> filesList;
+public abstract class Directory {
+    protected final String directoryPath;
+    protected ArrayList<LogFile> filesList;
 
     public Directory() {
-        String tempPath;
-
-        do {
-            tempPath = getDirectoryPath();
-        } while (!isDirectory(tempPath));
-
-        directoryPath = tempPath;
+        directoryPath = getDirectoryPath();
         filesToList();
     }
 
-    private void filesToList() {
-
-        File directory = new File(directoryPath);
-
-        File[] files = directory.listFiles();
-
-        if (files.length == 0) {
-            System.out.println("Katalog jest pusty");
-            System.exit(0);
-        }
-        ArrayList<LogFile> filesList = new ArrayList<>();
-
-        for (File file : files) {
-            filesList.add(new LogFile(file.getParentFile(), file.getName()));
-        }
-        this.filesList = filesList;
-    }
+    protected abstract void filesToList();
 
     private String getDirectoryPath() {
         System.out.print("Podaj ścieżkę do katalogu\n> ");
         Scanner scanner = new Scanner(System.in);
-        return scanner.next();
+        String tempPath = scanner.next();
+        if (isDirectory(tempPath)) return tempPath;
+        return getDirectoryPath();
     }
 
-    private boolean isDirectory(String directoryPath) {
-        File directory = new File(directoryPath);
+    protected abstract boolean isDirectory(String directoryPath);
 
-        if (!directory.isDirectory()) {
-            System.out.println(directoryPath + " nie jest katalogiem!\n");
-            return false;
-        } else {
-            return true;
+    public void search() {
+        StringBuilder fileContent = new StringBuilder();
+
+        for (LogFile file : filesList) {
+            String tempStr = file.searchInFile();
+            if (tempStr != null) {
+                System.out.println(tempStr);
+                fileContent.append(tempStr).append("\n");
+            }
+        }
+
+        if (fileContent.length() != 0) {
+            writeToFile(fileContent);
+        } else System.out.println("Nic nie znaleziono\n");
+    }
+
+    private void writeToFile(StringBuilder fileContent) {
+        Scanner scanner = new Scanner(System.in);
+
+        System.out.print("Zapisać do pliku? [t/n] > ");
+        if (scanner.next().contains("t")) {
+            System.out.print("Podaj nazwę pliku > ");
+            String fileName = scanner.next() + ".txt";
+            try {
+                FileOutputStream outputStream = new FileOutputStream(fileName);
+                byte[] strToBytes = fileContent.toString().getBytes();
+                outputStream.write(strToBytes);
+                outputStream.close();
+
+                System.out.println();
+                System.out.println("Plik zostal poprawnie zapisany");
+            } catch (IOException e) {
+                System.out.println("Blad zapisu pliku (" + e.getMessage() + ")");
+            }
         }
     }
-
-    public ArrayList<LogFile> getFilesList() {
-        return filesList;
-    }
 }
-
